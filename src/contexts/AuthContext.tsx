@@ -1,21 +1,20 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  walletAddress: string;
-  role: "USER" | "ADMIN";
-  active: boolean;
-  createdAt: string;
-}
+import { apiClient } from "../services/api";
+import type { User, LoginResponse } from "../types/api";
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (data: {
+    name: string;
+    email: string;
+    cpf: string;
+    password: string;
+    walletAddress?: string;
+  }) => Promise<void>;
   logout: () => void;
-  updateWalletAddress: (address: string) => void;
+  updateWalletAddress: (address: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -31,102 +30,86 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar se existe um usuário no localStorage
+    const storedToken = localStorage.getItem("authToken");
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+
+    if (storedToken && storedUser && storedUser !== "undefined") {
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Error parsing stored user:", error);
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("user");
+      }
     }
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Simular chamada de API
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const foundUser = users.find(
-      (u: any) => u.email === email && u.password === password
-    );
+    try {
+      const response: LoginResponse = await apiClient.login(email, password);
 
-    if (!foundUser) {
-      throw new Error("Credenciais inválidas");
+      setToken(response.token);
+      setUser(response.user);
+
+      localStorage.setItem("authToken", response.token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Falha ao fazer login");
     }
-
-    const userData: User = {
-      id: foundUser.id,
-      name: foundUser.name,
-      email: foundUser.email,
-      walletAddress: foundUser.walletAddress || "",
-      role: foundUser.role,
-      active: true,
-      createdAt: foundUser.createdAt,
-    };
-
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    // Simular chamada de API
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    
-    if (users.find((u: any) => u.email === email)) {
-      throw new Error("Email já cadastrado");
+  const register = async (data: {
+    name: string;
+    email: string;
+    cpf: string;
+    password: string;
+    walletAddress?: string;
+  }) => {
+    try {
+      await apiClient.register(data);
+      await login(data.email, data.password);
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Falha ao registrar");
     }
-
-    const newUser = {
-      id: users.length + 1,
-      name,
-      email,
-      password, // Em produção, isso seria hasheado no backend
-      walletAddress: "",
-      role: "USER" as const,
-      active: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(newUser);
-    localStorage.setItem("users", JSON.stringify(users));
-
-    const userData: User = {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      walletAddress: newUser.walletAddress,
-      role: newUser.role,
-      active: newUser.active,
-      createdAt: newUser.createdAt,
-    };
-
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("authToken");
   };
 
-  const updateWalletAddress = (address: string) => {
+  const updateWalletAddress = async (address: string) => {
     if (!user) return;
 
-    const updatedUser = { ...user, walletAddress: address };
-    setUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+    try {
+      // Salvar wallet address no backend
+      await apiClient.updateWallet(address);
 
-    // Atualizar também no array de usuários
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const userIndex = users.findIndex((u: any) => u.id === user.id);
-    if (userIndex !== -1) {
-      users[userIndex].walletAddress = address;
-      localStorage.setItem("users", JSON.stringify(users));
+      // Atualizar estado local após sucesso
+      const updatedUser = { ...user, walletAddress: address };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error("Failed to update wallet address:", error);
+      // Ainda assim atualiza localmente para não quebrar a UX
+      // mas o backend ficará desatualizado
+      const updatedUser = { ...user, walletAddress: address };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
     }
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, login, register, logout, updateWalletAddress, isLoading }}
+      value={{ user, token, login, register, logout, updateWalletAddress, isLoading }}
     >
       {children}
     </AuthContext.Provider>
