@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { validateCPF, formatCPF, cleanCPF } from "@/utils/cpfValidator";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const location = useLocation();
+  const { login, register, user, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Auto-redirect when user is authenticated (only from login page)
+  useEffect(() => {
+    if (user && !authLoading && location.pathname === "/login") {
+      navigate("/", { replace: true });
+    }
+  }, [user, authLoading, navigate, location.pathname]);
 
   const [loginData, setLoginData] = useState({
     email: "",
@@ -32,25 +41,11 @@ const Login = () => {
     try {
       await login(loginData.email, loginData.password);
       toast.success("Login realizado com sucesso!");
-      navigate("/");
+      // Navigation handled by useEffect
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao fazer login");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const formatCPF = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    
-    if (numbers.length <= 3) {
-      return numbers;
-    } else if (numbers.length <= 6) {
-      return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
-    } else if (numbers.length <= 9) {
-      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
-    } else {
-      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
     }
   };
 
@@ -64,16 +59,21 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Valida CPF antes de enviar
-      if (registerData.cpf.replace(/\D/g, "").length !== 11) {
-        toast.error("CPF inválido. Digite os 11 dígitos.");
+      if (!validateCPF(registerData.cpf)) {
+        toast.error("CPF inválido. Por favor, verifique os dígitos.");
         setIsLoading(false);
         return;
       }
 
-      await register(registerData.name, registerData.email, registerData.password);
+      await register({
+        name: registerData.name,
+        email: registerData.email,
+        cpf: cleanCPF(registerData.cpf),
+        password: registerData.password,
+      });
+
       toast.success("Cadastro realizado com sucesso!");
-      navigate("/");
+      // Navigation handled by useEffect
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao fazer cadastro");
     } finally {
