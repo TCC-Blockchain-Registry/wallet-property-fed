@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { PropertyCard, PropertyType } from "@/components/PropertyCard";
+import { PropertyCard } from "@/components/PropertyCard";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wallet, ArrowRightLeft } from "lucide-react";
+import { LogOut, Wallet, ArrowRightLeft, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { ethers } from "ethers";
 import {
@@ -16,64 +17,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useProperties } from "@/hooks/useProperties";
+import { useTransfers } from "@/hooks/useTransfers";
 import property1 from "@/assets/property-1.jpg";
 import property2 from "@/assets/property-2.jpg";
 import property3 from "@/assets/property-3.jpg";
 import property4 from "@/assets/property-4.jpg";
 
-const properties = [
-  {
-    id: 1,
-    image: property1,
-    matriculaId: 12345,
-    folha: 101,
-    comarca: "São Paulo - SP",
-    endereco: "Av. Paulista, 1000 - Bela Vista",
-    metragem: 120,
-    proprietario: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-    tipo: "URBANO" as PropertyType,
-    isRegular: true,
-  },
-  {
-    id: 2,
-    image: property2,
-    matriculaId: 23456,
-    folha: 205,
-    comarca: "Campinas - SP",
-    endereco: "Rua das Flores, 500 - Cambuí",
-    metragem: 200,
-    proprietario: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-    tipo: "URBANO" as PropertyType,
-    isRegular: true,
-  },
-  {
-    id: 3,
-    image: property3,
-    matriculaId: 34567,
-    folha: 312,
-    comarca: "Rio de Janeiro - RJ",
-    endereco: "Av. Atlântica, 2000 - Copacabana",
-    metragem: 250,
-    proprietario: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-    tipo: "LITORAL" as PropertyType,
-    isRegular: true,
-  },
-  {
-    id: 4,
-    image: property4,
-    matriculaId: 45678,
-    folha: 418,
-    comarca: "Florianópolis - SC",
-    endereco: "Rua da Praia, 150 - Jurerê Internacional",
-    metragem: 280,
-    proprietario: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
-    tipo: "LITORAL" as PropertyType,
-    isRegular: true,
-  },
-];
+const propertyImages = [property1, property2, property3, property4];
 
 const Index = () => {
+  const navigate = useNavigate();
   const { user, logout, updateWalletAddress } = useAuth();
+  const { properties, loading: propertiesLoading, error: propertiesError, fetchMyProperties } = useProperties();
+  const { loading: transferLoading, configureTransfer } = useTransfers();
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [selectedMatricula, setSelectedMatricula] = useState<number | null>(null);
@@ -98,40 +55,34 @@ const Index = () => {
       return;
     }
 
-    // Fecha o modal
-    setIsTransferDialogOpen(false);
-    
-    // Mostra toast de loading
-    toast.loading("Processando transferência...", { id: "transfer" });
-    
-    // Mock da requisição de transferência
-    setTimeout(() => {
-      try {
-        // Simula chamada para API/Smart Contract
-        const mockResponse = {
-          from: user?.walletAddress || "0x5656524f1156858676f1156858032925a3b844Bc",
-          to: transferTo,
-          transferType: transferType,
-          matriculaId: selectedMatricula,
-          approvers: ["0xCARTORIO", "0xPREFEITURA", "0xIF"],
-          txHash: `0x${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
-        };
+    if (!selectedMatricula) {
+      toast.error("Matrícula não selecionada");
+      return;
+    }
 
-        console.log("Mock Transfer Response:", mockResponse);
-        
-        toast.success(
-          `Transferência da matrícula #${selectedMatricula} iniciada com sucesso!`,
-          { id: "transfer", duration: 4000 }
-        );
-        
-        // Limpa o formulário
-        setCpfValue("");
-        setWalletValue("");
-        setSelectedMatricula(null);
-      } catch (error) {
-        toast.error("Erro ao transferir propriedade", { id: "transfer" });
-      }
-    }, 2000);
+    try {
+      setIsTransferDialogOpen(false);
+
+      await configureTransfer({
+        matriculaId: selectedMatricula,
+        toWalletAddress: transferType === "wallet" ? transferTo : undefined,
+        toCpf: transferType === "cpf" ? transferTo.replace(/\D/g, "") : undefined,
+      });
+
+      toast.success(
+        `Transferência da matrícula #${selectedMatricula} iniciada com sucesso!`,
+        { duration: 4000 }
+      );
+
+      setCpfValue("");
+      setWalletValue("");
+      setSelectedMatricula(null);
+
+      await fetchMyProperties();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || "Erro ao transferir propriedade";
+      toast.error(errorMessage);
+    }
   };
 
   const handleDialogClose = () => {
@@ -169,7 +120,7 @@ const Index = () => {
           if (typeof (window as any).ethereum !== "undefined") {
             const provider = new ethers.BrowserProvider((window as any).ethereum);
             const accounts = await provider.send("eth_requestAccounts", []);
-            
+
             if (accounts.length > 0) {
               updateWalletAddress(accounts[0]);
               toast.success("MetaMask conectado automaticamente!");
@@ -178,7 +129,6 @@ const Index = () => {
             toast.error("MetaMask não encontrado. Por favor, instale a extensão.");
           }
         } catch (error: any) {
-          console.error("Erro ao conectar MetaMask:", error);
           if (error.code === 4001) {
             toast.error("Conexão com MetaMask cancelada");
           } else {
@@ -192,6 +142,12 @@ const Index = () => {
 
     connectWalletAutomatically();
   }, [user?.walletAddress, updateWalletAddress, isConnectingWallet]);
+
+  useEffect(() => {
+    if (user) {
+      fetchMyProperties();
+    }
+  }, [user, fetchMyProperties]);
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -216,6 +172,14 @@ const Index = () => {
                 </span>
               )}
             </div>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => navigate("/register-property")}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Cadastrar Imóvel
+            </Button>
             <Button variant="outline" size="sm" onClick={logout}>
               <LogOut className="h-4 w-4 mr-2" />
               Sair
@@ -234,15 +198,51 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {properties.map((property) => (
-            <PropertyCard 
-              key={property.id} 
-              {...property} 
-              onTransfer={() => handleTransfer(property.matriculaId)}
-            />
-          ))}
-        </div>
+        {propertiesLoading && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Carregando propriedades...</p>
+          </div>
+        )}
+
+        {propertiesError && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <p className="text-destructive mb-4">Erro ao carregar propriedades</p>
+            <Button onClick={() => fetchMyProperties()} variant="outline">
+              Tentar novamente
+            </Button>
+          </div>
+        )}
+
+        {!propertiesLoading && !propertiesError && properties.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <p className="text-muted-foreground mb-4">Você ainda não possui propriedades cadastradas</p>
+            <p className="text-sm text-muted-foreground">
+              Registre sua primeira propriedade para começar
+            </p>
+          </div>
+        )}
+
+        {!propertiesLoading && !propertiesError && properties.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {properties.map((property, index) => (
+              <PropertyCard
+                key={property.matriculaId}
+                id={property.matriculaId}
+                image={propertyImages[index % propertyImages.length]}
+                matriculaId={property.matriculaId}
+                folha={property.folha}
+                comarca={property.comarca}
+                endereco={property.endereco}
+                metragem={property.metragem}
+                proprietario={property.ownerWalletAddress}
+                tipo={property.propertyType as "URBANO" | "LITORAL" | "RURAL"}
+                isRegular={property.regularStatus === "REGULAR"}
+                onTransfer={() => handleTransfer(property.matriculaId)}
+              />
+            ))}
+          </div>
+        )}
       </main>
 
       <footer className="border-t border-border mt-20">
@@ -332,10 +332,20 @@ const Index = () => {
             </Button>
             <Button
               onClick={confirmTransfer}
+              disabled={transferLoading}
               className="bg-primary hover:bg-primary/90"
             >
-              <ArrowRightLeft className="w-4 h-4 mr-2" />
-              Confirmar Transferência
+              {transferLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <ArrowRightLeft className="w-4 h-4 mr-2" />
+                  Confirmar Transferência
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
