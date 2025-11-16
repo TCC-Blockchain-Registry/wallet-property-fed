@@ -13,11 +13,11 @@ import { toast } from "sonner";
 import { ArrowLeft, AlertCircle, Building2 } from "lucide-react";
 
 /**
- * NOTA: Esta funcionalidade simula o papel administrativo de um cartório para fins de demonstração/testes.
- * Em produção, o registro de propriedades seria realizado por sistemas notariais externos autorizados.
+ * NOTE: This functionality simulates the administrative role of a notary office for demonstration/testing purposes.
+ * In production, property registration would be performed by authorized external notarial systems.
  *
- * O frontend do usuário comum NÃO deveria ter acesso a esta funcionalidade.
- * Esta página existe apenas para facilitar testes do TCC.
+ * The end-user frontend should NOT have access to this functionality.
+ * This page exists solely to facilitate system testing.
  */
 
 const RegisterProperty = () => {
@@ -39,7 +39,6 @@ const RegisterProperty = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validações básicas
     if (!formData.matriculaId || !formData.folha || !formData.comarca ||
         !formData.endereco || !formData.metragem) {
       toast.error("Por favor, preencha todos os campos obrigatórios");
@@ -78,7 +77,6 @@ const RegisterProperty = () => {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-3xl mx-auto">
-        {/* Header */}
         <div className="mb-6">
           <Button
             variant="ghost"
@@ -98,7 +96,6 @@ const RegisterProperty = () => {
           </p>
         </div>
 
-        {/* Warning Badge */}
         <div className="mb-6 p-4 border border-yellow-500/50 bg-yellow-500/10 rounded-lg flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />
           <div className="flex-1">
@@ -112,7 +109,6 @@ const RegisterProperty = () => {
           </div>
         </div>
 
-        {/* Form Card */}
         <Card>
           <CardHeader>
             <CardTitle>Dados da Propriedade</CardTitle>
@@ -122,7 +118,6 @@ const RegisterProperty = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Matrícula e Folha */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="matriculaId">
@@ -159,7 +154,6 @@ const RegisterProperty = () => {
                 </div>
               </div>
 
-              {/* Comarca */}
               <div className="space-y-2">
                 <Label htmlFor="comarca">
                   Comarca <span className="text-red-500">*</span>
@@ -177,7 +171,6 @@ const RegisterProperty = () => {
                 </p>
               </div>
 
-              {/* Endereço */}
               <div className="space-y-2">
                 <Label htmlFor="endereco">
                   Endereço Completo <span className="text-red-500">*</span>
@@ -192,7 +185,6 @@ const RegisterProperty = () => {
                 />
               </div>
 
-              {/* Metragem e Tipo */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="metragem">
@@ -228,7 +220,6 @@ const RegisterProperty = () => {
                 </div>
               </div>
 
-              {/* Matrícula Origem */}
               <div className="space-y-2">
                 <Label htmlFor="matriculaOrigem">
                   Matrícula de Origem (Opcional)
@@ -245,7 +236,6 @@ const RegisterProperty = () => {
                 </p>
               </div>
 
-              {/* Status Regular */}
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="isRegular"
@@ -257,7 +247,6 @@ const RegisterProperty = () => {
                 </Label>
               </div>
 
-              {/* Proprietário Info */}
               <div className="p-4 bg-muted rounded-lg space-y-2">
                 <Label className="text-sm font-medium">Proprietário</Label>
                 <div className="flex items-center gap-2">
@@ -276,7 +265,6 @@ const RegisterProperty = () => {
                 )}
               </div>
 
-              {/* Submit Button */}
               <div className="flex gap-3">
                 <Button
                   type="submit"
@@ -298,7 +286,6 @@ const RegisterProperty = () => {
           </CardContent>
         </Card>
 
-        {/* Footer Info */}
         <div className="mt-6 text-center text-xs text-muted-foreground">
           <p>
             Campos marcados com <span className="text-red-500">*</span> são obrigatórios

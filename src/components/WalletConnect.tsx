@@ -22,14 +22,14 @@ export const WalletConnect = () => {
         setAccount(accounts[0]);
       }
     } catch (error) {
-      console.error("Error checking wallet connection:", error);
+      // Silently handle wallet check errors
     }
   };
 
   const connectWallet = async () => {
     try {
       const { ethereum } = window as any;
-      
+
       if (!ethereum) {
         toast.error("MetaMask não detectado", {
           description: "Por favor, instale a extensão MetaMask no seu navegador"
@@ -38,16 +38,15 @@ export const WalletConnect = () => {
       }
 
       setIsConnecting(true);
-      
+
       const provider = new BrowserProvider(ethereum);
       const accounts = await provider.send("eth_requestAccounts", []);
-      
+
       setAccount(accounts[0]);
       toast.success("Carteira conectada!", {
         description: `Endereço: ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`
       });
     } catch (error: any) {
-      console.error("Error connecting wallet:", error);
       toast.error("Erro ao conectar", {
         description: error.message || "Não foi possível conectar à carteira"
       });
