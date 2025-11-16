@@ -44,7 +44,6 @@ export const useProperties = () => {
       setError(null);
       try {
         const result = await apiClient.registerProperty(data);
-        // Após registro, atualizar lista de propriedades
         await fetchMyProperties();
         return result;
       } catch (err: any) {

@@ -42,7 +42,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
       } catch (error) {
-        console.error("Error parsing stored user:", error);
         localStorage.removeItem("authToken");
         localStorage.removeItem("user");
       }
@@ -90,17 +89,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user) return;
 
     try {
-      // Salvar wallet address no backend
       await apiClient.updateWallet(address);
 
-      // Atualizar estado local após sucesso
       const updatedUser = { ...user, walletAddress: address };
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
     } catch (error) {
-      console.error("Failed to update wallet address:", error);
-      // Ainda assim atualiza localmente para não quebrar a UX
-      // mas o backend ficará desatualizado
+      // Graceful degradation: update locally even if backend sync fails
       const updatedUser = { ...user, walletAddress: address };
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));

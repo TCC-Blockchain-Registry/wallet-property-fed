@@ -14,7 +14,6 @@ class ApiClient {
       },
     });
 
-    // Interceptor para adicionar token JWT
     this.client.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('authToken');
@@ -26,12 +25,10 @@ class ApiClient {
       (error) => Promise.reject(error)
     );
 
-    // Interceptor para tratamento de erros
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
         if (error.response?.status === 401) {
-          // Token expirado ou inválido
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
           window.location.href = '/login';
@@ -41,7 +38,6 @@ class ApiClient {
     );
   }
 
-  // Auth endpoints
   async login(email: string, password: string) {
     const response = await this.client.post('/auth/login', { email, password });
     return response.data;
@@ -63,7 +59,6 @@ class ApiClient {
     return response.data;
   }
 
-  // Property endpoints
   async getMyProperties() {
     const response = await this.client.get('/properties/my');
     return response.data;
@@ -84,7 +79,6 @@ class ApiClient {
     return response.data;
   }
 
-  // Transfer endpoints
   async getMyTransfers() {
     const response = await this.client.get('/transfers/my');
     return response.data;
@@ -120,7 +114,6 @@ class ApiClient {
     return response.data;
   }
 
-  // Health check
   async healthCheck() {
     const response = await this.client.get('/health');
     return response.data;
