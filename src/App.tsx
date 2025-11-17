@@ -10,7 +10,16 @@ import Login from "./pages/Login";
 import RegisterProperty from "./pages/RegisterProperty";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0, // Dados sempre considerados stale (precisam refetch)
+      gcTime: 0, // Não manter em cache (antes era cacheTime)
+      refetchOnWindowFocus: true, // Refetch ao voltar para a janela
+      refetchOnMount: true, // Refetch ao montar componente
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

@@ -38,6 +38,7 @@ export interface PropertyMetadata {
   area: number;
   propertyType: string;
   registrationDate?: string;
+  status?: 'PENDING' | 'PROCESSING' | 'PENDING_APPROVALS' | 'EXECUTED' | 'FAILED';
 }
 
 export interface PropertyBlockchainData {
