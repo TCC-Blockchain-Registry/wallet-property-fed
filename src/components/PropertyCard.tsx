@@ -1,12 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, FileText, Ruler, Shield, ArrowRightLeft } from "lucide-react";
+import { MapPin, FileText, Ruler, Shield, ArrowRightLeft, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 export type PropertyType = "URBANO" | "RURAL" | "LITORAL";
+export type PropertyStatus = "PENDING" | "PROCESSING" | "PENDING_APPROVALS" | "EXECUTED" | "FAILED";
 
 interface PropertyCardProps {
-  image: string;
   matriculaId: number;
   folha: number;
   comarca: string;
@@ -15,11 +15,11 @@ interface PropertyCardProps {
   proprietario: string;
   tipo: PropertyType;
   isRegular: boolean;
+  status?: PropertyStatus;
   onTransfer?: () => void;
 }
 
 export const PropertyCard = ({
-  image,
   matriculaId,
   folha,
   comarca,
@@ -27,6 +27,7 @@ export const PropertyCard = ({
   metragem,
   tipo,
   isRegular,
+  status = "PENDING",
   onTransfer,
 }: PropertyCardProps) => {
   const getTipoLabel = (tipo: PropertyType) => {
@@ -46,23 +47,61 @@ export const PropertyCard = ({
     };
     return colors[tipo];
   };
+
+  const getStatusInfo = (status?: PropertyStatus | string) => {
+    const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+      PENDING: {
+        label: "Pendente",
+        color: "bg-gray-500 text-white",
+        icon: Clock
+      },
+      PROCESSING: {
+        label: "Processando",
+        color: "bg-blue-500 text-white",
+        icon: Loader2
+      },
+      PENDING_APPROVALS: {
+        label: "Aguardando Aprovações",
+        color: "bg-yellow-500 text-white",
+        icon: AlertCircle
+      },
+      EXECUTED: {
+        label: "Executado",
+        color: "bg-green-600 text-white",
+        icon: CheckCircle
+      },
+      FAILED: {
+        label: "Falhou",
+        color: "bg-red-600 text-white",
+        icon: AlertCircle
+      }
+    };
+    
+    // Se o status não for reconhecido, retorna PENDING como fallback
+    return statusConfig[status || "PENDING"] || statusConfig.PENDING;
+  };
+
+  const statusInfo = getStatusInfo(status);
+  const StatusIcon = statusInfo.icon;
+
   return (
     <Card className="group overflow-hidden border-border hover:shadow-xl transition-all duration-300 cursor-pointer">
-      <div className="relative overflow-hidden aspect-[4/3]">
-        <img
-          src={image}
-          alt={`Imóvel matrícula ${matriculaId}`}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-        />
-        <div className="absolute top-4 right-4 flex gap-2">
-          <Badge className={`font-semibold text-sm px-3 py-1.5 ${getTipoColor(tipo)}`}>
-            {getTipoLabel(tipo)}
-          </Badge>
-          {isRegular && (
-            <Badge className="bg-green-600 text-white shadow-lg font-semibold text-sm px-2 py-1.5">
-              <Shield className="w-3 h-3" />
+      <div className="relative p-6 bg-gradient-to-br from-primary/5 to-primary/10">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Badge className={`font-semibold text-sm px-3 py-1.5 ${getTipoColor(tipo)}`}>
+              {getTipoLabel(tipo)}
             </Badge>
-          )}
+            {isRegular && (
+              <Badge className="bg-green-600 text-white shadow-lg font-semibold text-sm px-2 py-1.5">
+                <Shield className="w-3 h-3" />
+              </Badge>
+            )}
+          </div>
+          <Badge className={`font-semibold text-xs px-2 py-1.5 flex items-center gap-1 ${statusInfo.color}`}>
+            <StatusIcon className={`w-3 h-3 ${status === "PROCESSING" ? "animate-spin" : ""}`} />
+            {statusInfo.label}
+          </Badge>
         </div>
       </div>
       

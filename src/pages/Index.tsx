@@ -19,12 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProperties } from "@/hooks/useProperties";
 import { useTransfers } from "@/hooks/useTransfers";
-import property1 from "@/assets/property-1.jpg";
-import property2 from "@/assets/property-2.jpg";
-import property3 from "@/assets/property-3.jpg";
-import property4 from "@/assets/property-4.jpg";
-
-const propertyImages = [property1, property2, property3, property4];
 
 const Index = () => {
   const navigate = useNavigate();
@@ -144,10 +138,21 @@ const Index = () => {
   }, [user?.walletAddress, updateWalletAddress, isConnectingWallet]);
 
   useEffect(() => {
-    if (user) {
-      fetchMyProperties();
-    }
-  }, [user, fetchMyProperties]);
+    const loadProperties = async () => {
+      // Aguarda o token estar disponível no localStorage
+      const token = localStorage.getItem('authToken');
+      if (user && token) {
+        try {
+          await fetchMyProperties();
+        } catch (error) {
+          console.error('Erro ao carregar propriedades:', error);
+        }
+      }
+    };
+
+    loadProperties();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // Apenas user como dependência
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -225,11 +230,9 @@ const Index = () => {
 
         {!propertiesLoading && !propertiesError && properties.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {properties.map((property, index) => (
+            {properties.map((property) => (
               <PropertyCard
                 key={property.matriculaId}
-                id={property.matriculaId}
-                image={propertyImages[index % propertyImages.length]}
                 matriculaId={property.matriculaId}
                 folha={property.folha}
                 comarca={property.comarca}
@@ -238,6 +241,7 @@ const Index = () => {
                 proprietario={property.ownerWalletAddress}
                 tipo={property.propertyType as "URBANO" | "LITORAL" | "RURAL"}
                 isRegular={property.regularStatus === "REGULAR"}
+                status={property.status as any}
                 onTransfer={() => handleTransfer(property.matriculaId)}
               />
             ))}
