@@ -1,66 +1,76 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProperties } from "@/hooks/useProperties";
+import { useRegisterProperty } from "@/hooks/useProperties";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, AlertCircle, Building2 } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
-/**
- * NOTE: This functionality simulates the administrative role of a notary office for demonstration/testing purposes.
- * In production, property registration would be performed by authorized external notarial systems.
- *
- * The end-user frontend should NOT have access to this functionality.
- * This page exists solely to facilitate system testing.
- */
+const propertyFormSchema = z.object({
+  matriculaId: z.coerce.number().int().positive("Matrícula deve ser um número positivo"),
+  folha: z.coerce.number().int().positive("Folha deve ser um número positivo"),
+  comarca: z.string().min(1, "Comarca é obrigatória"),
+  endereco: z.string().min(1, "Endereço é obrigatório"),
+  metragem: z.coerce.number().int().positive("Metragem deve ser um número positivo"),
+  tipo: z.enum(["URBANO", "RURAL", "LITORAL"]),
+  isRegular: z.boolean(),
+  matriculaOrigem: z.union([z.coerce.number().int().positive(), z.literal("")]).optional(),
+});
+
+type PropertyFormValues = z.infer<typeof propertyFormSchema>;
 
 const RegisterProperty = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { registerProperty, loading } = useProperties();
+  const registerMutation = useRegisterProperty();
 
-  const [formData, setFormData] = useState({
-    matriculaId: "",
-    folha: "",
-    comarca: "",
-    endereco: "",
-    metragem: "",
-    tipo: "URBANO" as "URBANO" | "RURAL" | "LITORAL",
-    isRegular: true,
-    matriculaOrigem: "",
+  const form = useForm<PropertyFormValues>({
+    resolver: zodResolver(propertyFormSchema),
+    defaultValues: {
+      matriculaId: undefined,
+      folha: undefined,
+      comarca: "",
+      endereco: "",
+      metragem: undefined,
+      tipo: "URBANO",
+      isRegular: true,
+      matriculaOrigem: "",
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.matriculaId || !formData.folha || !formData.comarca ||
-        !formData.endereco || !formData.metragem) {
-      toast.error("Por favor, preencha todos os campos obrigatórios");
-      return;
-    }
-
+  const onSubmit = async (data: PropertyFormValues) => {
     if (!user?.walletAddress) {
       toast.error("Conecte sua carteira MetaMask para registrar propriedades");
       return;
     }
 
     try {
-      await registerProperty({
-        matriculaId: parseInt(formData.matriculaId),
-        folha: parseInt(formData.folha),
-        comarca: formData.comarca,
-        endereco: formData.endereco,
-        metragem: parseInt(formData.metragem),
+      await registerMutation.mutateAsync({
+        matriculaId: data.matriculaId,
+        folha: data.folha,
+        comarca: data.comarca,
+        endereco: data.endereco,
+        metragem: data.metragem,
         proprietario: user.walletAddress,
-        tipo: formData.tipo,
-        isRegular: formData.isRegular,
-        matriculaOrigem: formData.matriculaOrigem ? parseInt(formData.matriculaOrigem) : undefined,
+        tipo: data.tipo,
+        isRegular: data.isRegular,
+        matriculaOrigem: data.matriculaOrigem ? Number(data.matriculaOrigem) : undefined,
       });
 
       toast.success("Propriedade registrada com sucesso!");
@@ -68,10 +78,6 @@ const RegisterProperty = () => {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao registrar propriedade");
     }
-  };
-
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData({ ...formData, [field]: value });
   };
 
   return (
@@ -100,7 +106,7 @@ const RegisterProperty = () => {
           <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm font-medium text-yellow-500 dark:text-yellow-400">
-              ⚠️ Funcionalidade Administrativa - Apenas para Demonstração
+              Funcionalidade Administrativa - Apenas para Demonstração
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               Em produção, o registro de propriedades seria realizado por sistemas notariais externos (cartórios).
@@ -117,172 +123,225 @@ const RegisterProperty = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="matriculaId">
-                    Matrícula <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="matriculaId"
-                    type="number"
-                    placeholder="Ex: 12345"
-                    value={formData.matriculaId}
-                    onChange={(e) => handleInputChange("matriculaId", e.target.value)}
-                    required
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="matriculaId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Matrícula <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Ex: 12345"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Número único da matrícula do imóvel
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Número único da matrícula do imóvel
-                  </p>
+
+                  <FormField
+                    control={form.control}
+                    name="folha"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Folha <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Ex: 100"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Número da folha no livro de registro
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="folha">
-                    Folha <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="folha"
-                    type="number"
-                    placeholder="Ex: 100"
-                    value={formData.folha}
-                    onChange={(e) => handleInputChange("folha", e.target.value)}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Número da folha no livro de registro
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="comarca">
-                  Comarca <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="comarca"
-                  type="text"
-                  placeholder="Ex: São Paulo - SP"
-                  value={formData.comarca}
-                  onChange={(e) => handleInputChange("comarca", e.target.value)}
-                  required
+                <FormField
+                  control={form.control}
+                  name="comarca"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Comarca <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Ex: São Paulo - SP"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Jurisdição/comarca onde o imóvel está registrado
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Jurisdição/comarca onde o imóvel está registrado
-                </p>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="endereco">
-                  Endereço Completo <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="endereco"
-                  type="text"
-                  placeholder="Ex: Rua das Flores, 123, Centro"
-                  value={formData.endereco}
-                  onChange={(e) => handleInputChange("endereco", e.target.value)}
-                  required
+                <FormField
+                  control={form.control}
+                  name="endereco"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Endereço Completo <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Ex: Rua das Flores, 123, Centro"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="metragem">
-                    Metragem (m²) <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="metragem"
-                    type="number"
-                    placeholder="Ex: 250"
-                    value={formData.metragem}
-                    onChange={(e) => handleInputChange("metragem", e.target.value)}
-                    required
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="metragem"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Metragem (m²) <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="Ex: 250"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="tipo"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Tipo de Imóvel <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="URBANO">Urbano</SelectItem>
+                            <SelectItem value="RURAL">Rural</SelectItem>
+                            <SelectItem value="LITORAL">Litoral</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="tipo">
-                    Tipo de Imóvel <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={formData.tipo}
-                    onValueChange={(value) => handleInputChange("tipo", value)}
+                <FormField
+                  control={form.control}
+                  name="matriculaOrigem"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Matrícula de Origem (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Ex: 11111"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Caso seja desmembramento ou remembramento de outra matrícula
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="isRegular"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="cursor-pointer">
+                          Situação regular (sem pendências)
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <div className="p-4 bg-muted rounded-lg space-y-2">
+                  <p className="text-sm font-medium">Proprietário</p>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{user?.name}</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {user?.walletAddress
+                        ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}`
+                        : "Carteira não conectada"
+                      }
+                    </span>
+                  </div>
+                  {!user?.walletAddress && (
+                    <p className="text-xs text-red-500">
+                      Conecte sua carteira MetaMask para continuar
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                    disabled={registerMutation.isPending || !user?.walletAddress}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="URBANO">Urbano</SelectItem>
-                      <SelectItem value="RURAL">Rural</SelectItem>
-                      <SelectItem value="LITORAL">Litoral</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    {registerMutation.isPending ? "Registrando..." : "Registrar Propriedade"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigate("/")}
+                    disabled={registerMutation.isPending}
+                  >
+                    Cancelar
+                  </Button>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="matriculaOrigem">
-                  Matrícula de Origem (Opcional)
-                </Label>
-                <Input
-                  id="matriculaOrigem"
-                  type="number"
-                  placeholder="Ex: 11111"
-                  value={formData.matriculaOrigem}
-                  onChange={(e) => handleInputChange("matriculaOrigem", e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Caso seja desmembramento ou remembramento de outra matrícula
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isRegular"
-                  checked={formData.isRegular}
-                  onCheckedChange={(checked) => handleInputChange("isRegular", checked as boolean)}
-                />
-                <Label htmlFor="isRegular" className="cursor-pointer">
-                  Situação regular (sem pendências)
-                </Label>
-              </div>
-
-              <div className="p-4 bg-muted rounded-lg space-y-2">
-                <Label className="text-sm font-medium">Proprietário</Label>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{user?.name}</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {user?.walletAddress
-                      ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}`
-                      : "Carteira não conectada"
-                    }
-                  </span>
-                </div>
-                {!user?.walletAddress && (
-                  <p className="text-xs text-red-500">
-                    ⚠️ Conecte sua carteira MetaMask para continuar
-                  </p>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={loading || !user?.walletAddress}
-                >
-                  {loading ? "Registrando..." : "Registrar Propriedade"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate("/")}
-                  disabled={loading}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+              </form>
+            </Form>
           </CardContent>
         </Card>
 

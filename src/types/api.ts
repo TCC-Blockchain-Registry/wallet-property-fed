@@ -1,4 +1,3 @@
-// Auth types
 export interface LoginResponse {
   token: string;
   user: User;
@@ -29,14 +28,16 @@ export interface RegisterResponse {
   userId: number;
 }
 
-// Property types
 export interface PropertyMetadata {
-  matriculaId: string;
-  ownerCpf: string;
-  ownerWallet: string;
-  address: string;
-  area: number;
+  matriculaId: number;
+  folha: number;
+  comarca: string;
+  endereco: string;
+  metragem: number;
+  ownerWalletAddress: string;
+  ownerCpf?: string;
   propertyType: string;
+  regularStatus?: 'REGULAR' | 'IRREGULAR';
   registrationDate?: string;
   status?: 'PENDING' | 'PROCESSING' | 'PENDING_APPROVALS' | 'EXECUTED' | 'FAILED';
 }
@@ -58,20 +59,18 @@ export interface PropertyWithBlockchain extends PropertyMetadata {
   blockchain: PropertyBlockchainData | null;
 }
 
-// Property Registration Request (matches backend PropertyRegistrationRequest.java)
 export interface PropertyRegistrationRequest {
   matriculaId: number;
   folha: number;
   comarca: string;
   endereco: string;
   metragem: number;
-  proprietario: string; // wallet address
+  proprietario: string;
   matriculaOrigem?: number;
   tipo: 'URBANO' | 'RURAL' | 'LITORAL';
   isRegular?: boolean;
 }
 
-// Transfer types
 export interface Transfer {
   id: number;
   matriculaId: string;
@@ -84,9 +83,9 @@ export interface Transfer {
 }
 
 export interface TransferConfigureRequest {
-  matriculaId: string;
-  buyerWallet: string;
-  approverWallets: string[];
+  matriculaId: number;
+  toWalletAddress?: string;
+  toCpf?: string;
 }
 
 export interface TransferApproveRequest {
@@ -99,7 +98,6 @@ export interface TransferAcceptRequest {
   buyerWallet: string;
 }
 
-// Health types
 export interface HealthCheck {
   status: 'healthy' | 'degraded';
   services: {
@@ -118,7 +116,6 @@ export interface HealthCheck {
   };
 }
 
-// Error types
 export interface ApiError {
   message: string;
   statusCode: number;

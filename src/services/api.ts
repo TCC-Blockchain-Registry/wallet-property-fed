@@ -48,7 +48,7 @@ class ApiClient {
     email: string;
     cpf: string;
     password: string;
-    walletAddress: string;
+    walletAddress?: string;
   }) {
     const response = await this.client.post('/auth/register', data);
     return response.data;
@@ -85,9 +85,9 @@ class ApiClient {
   }
 
   async configureTransfer(data: {
-    matriculaId: string;
-    buyerWallet: string;
-    approverWallets: string[];
+    matriculaId: number;
+    toWalletAddress?: string;
+    toCpf?: string;
   }) {
     const response = await this.client.post('/transfers/configure', data);
     return response.data;

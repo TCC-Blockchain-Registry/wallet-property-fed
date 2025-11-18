@@ -17,14 +17,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useProperties } from "@/hooks/useProperties";
-import { useTransfers } from "@/hooks/useTransfers";
+import { useMyProperties } from "@/hooks/useProperties";
+import { useConfigureTransfer } from "@/hooks/useTransfers";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, logout, updateWalletAddress } = useAuth();
-  const { properties, loading: propertiesLoading, error: propertiesError, fetchMyProperties } = useProperties();
-  const { loading: transferLoading, configureTransfer } = useTransfers();
+  const { data: properties = [], isLoading: propertiesLoading, error: propertiesError, refetch: refetchProperties } = useMyProperties();
+  const configureTransferMutation = useConfigureTransfer();
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [selectedMatricula, setSelectedMatricula] = useState<number | null>(null);
@@ -57,7 +57,7 @@ const Index = () => {
     try {
       setIsTransferDialogOpen(false);
 
-      await configureTransfer({
+      await configureTransferMutation.mutateAsync({
         matriculaId: selectedMatricula,
         toWalletAddress: transferType === "wallet" ? transferTo : undefined,
         toCpf: transferType === "cpf" ? transferTo.replace(/\D/g, "") : undefined,
@@ -71,8 +71,6 @@ const Index = () => {
       setCpfValue("");
       setWalletValue("");
       setSelectedMatricula(null);
-
-      await fetchMyProperties();
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || "Erro ao transferir propriedade";
       toast.error(errorMessage);
@@ -137,22 +135,6 @@ const Index = () => {
     connectWalletAutomatically();
   }, [user?.walletAddress, updateWalletAddress, isConnectingWallet]);
 
-  useEffect(() => {
-    const loadProperties = async () => {
-      // Aguarda o token estar disponível no localStorage
-      const token = localStorage.getItem('authToken');
-      if (user && token) {
-        try {
-          await fetchMyProperties();
-        } catch (error) {
-          console.error('Erro ao carregar propriedades:', error);
-        }
-      }
-    };
-
-    loadProperties();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // Apenas user como dependência
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -213,7 +195,7 @@ const Index = () => {
         {propertiesError && (
           <div className="flex flex-col items-center justify-center py-20">
             <p className="text-destructive mb-4">Erro ao carregar propriedades</p>
-            <Button onClick={() => fetchMyProperties()} variant="outline">
+            <Button onClick={() => refetchProperties()} variant="outline">
               Tentar novamente
             </Button>
           </div>
@@ -336,10 +318,10 @@ const Index = () => {
             </Button>
             <Button
               onClick={confirmTransfer}
-              disabled={transferLoading}
+              disabled={configureTransferMutation.isPending}
               className="bg-primary hover:bg-primary/90"
             >
-              {transferLoading ? (
+              {configureTransferMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Processando...
