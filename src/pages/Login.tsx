@@ -15,7 +15,6 @@ const Login = () => {
   const { login, register, user, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Auto-redirect when user is authenticated (only from login page)
   useEffect(() => {
     if (user && !authLoading && location.pathname === "/login") {
       navigate("/", { replace: true });
@@ -41,7 +40,6 @@ const Login = () => {
     try {
       await login(loginData.email, loginData.password);
       toast.success("Login realizado com sucesso!");
-      // Navigation handled by useEffect
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao fazer login");
     } finally {
@@ -73,7 +71,6 @@ const Login = () => {
       });
 
       toast.success("Cadastro realizado com sucesso!");
-      // Navigation handled by useEffect
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Erro ao fazer cadastro");
     } finally {

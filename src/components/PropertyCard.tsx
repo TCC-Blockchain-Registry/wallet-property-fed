@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MapPin, FileText, Ruler, Shield, ArrowRightLeft, Clock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { MapPin, FileText, Ruler, Shield, ArrowRightLeft, Clock, CheckCircle, AlertCircle, Loader2, LucideIcon } from "lucide-react";
 
 export type PropertyType = "URBANO" | "RURAL" | "LITORAL";
 export type PropertyStatus = "PENDING" | "PROCESSING" | "PENDING_APPROVALS" | "EXECUTED" | "FAILED";
@@ -49,7 +49,7 @@ export const PropertyCard = ({
   };
 
   const getStatusInfo = (status?: PropertyStatus | string) => {
-    const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+    const statusConfig: Record<string, { label: string; color: string; icon: LucideIcon }> = {
       PENDING: {
         label: "Pendente",
         color: "bg-gray-500 text-white",

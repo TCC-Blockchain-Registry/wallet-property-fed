@@ -58,8 +58,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       localStorage.setItem("authToken", response.token);
       localStorage.setItem("user", JSON.stringify(response.user));
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Falha ao fazer login");
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      throw new Error(axiosError.response?.data?.message || "Falha ao fazer login");
     }
   };
 
@@ -73,8 +74,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await apiClient.register(data);
       await login(data.email, data.password);
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Falha ao registrar");
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      throw new Error(axiosError.response?.data?.message || "Falha ao registrar");
     }
   };
 

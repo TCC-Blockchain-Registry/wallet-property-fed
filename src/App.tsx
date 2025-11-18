@@ -1,5 +1,4 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -14,10 +13,10 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 0, // Dados sempre considerados stale (precisam refetch)
-      gcTime: 0, // Não manter em cache (antes era cacheTime)
-      refetchOnWindowFocus: true, // Refetch ao voltar para a janela
-      refetchOnMount: true, // Refetch ao montar componente
+      staleTime: 0,
+      gcTime: 0,
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
     },
   },
 });
@@ -28,7 +27,6 @@ const App = () => (
       <TooltipProvider>
         <AuthProvider>
           <Toaster />
-          <Sonner />
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />

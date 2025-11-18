@@ -19,6 +19,11 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMyProperties } from "@/hooks/useProperties";
 import { useConfigureTransfer } from "@/hooks/useTransfers";
+import { formatCPF } from "@/utils/cpfValidator";
+import { formatAddress } from "@/utils/formatters";
+
+const METAMASK_USER_REJECTED = 4001;
+const TOAST_DURATION_MS = 4000;
 
 const Index = () => {
   const navigate = useNavigate();
@@ -65,14 +70,15 @@ const Index = () => {
 
       toast.success(
         `Transferência da matrícula #${selectedMatricula} iniciada com sucesso!`,
-        { duration: 4000 }
+        { duration: TOAST_DURATION_MS }
       );
 
       setCpfValue("");
       setWalletValue("");
       setSelectedMatricula(null);
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.message || "Erro ao transferir propriedade";
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const errorMessage = axiosError?.response?.data?.message || "Erro ao transferir propriedade";
       toast.error(errorMessage);
     }
   };
@@ -83,20 +89,6 @@ const Index = () => {
     setWalletValue("");
     setSelectedMatricula(null);
     setTransferType("wallet");
-  };
-
-  const formatCPF = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    
-    if (numbers.length <= 3) {
-      return numbers;
-    } else if (numbers.length <= 6) {
-      return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
-    } else if (numbers.length <= 9) {
-      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
-    } else {
-      return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
-    }
   };
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,8 +112,8 @@ const Index = () => {
           } else {
             toast.error("MetaMask não encontrado. Por favor, instale a extensão.");
           }
-        } catch (error: any) {
-          if (error.code === 4001) {
+        } catch (error: unknown) {
+          if (error instanceof Error && 'code' in error && error.code === METAMASK_USER_REJECTED) {
             toast.error("Conexão com MetaMask cancelada");
           } else {
             toast.error("Erro ao conectar com MetaMask");
@@ -134,11 +126,6 @@ const Index = () => {
 
     connectWalletAutomatically();
   }, [user?.walletAddress, updateWalletAddress, isConnectingWallet]);
-
-
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -234,7 +221,7 @@ const Index = () => {
       <footer className="border-t border-border mt-20">
         <div className="container px-4 md:px-8 py-8 text-center text-muted-foreground">
           <p className="text-sm">
-            © 2025 Carteira de Imóveis. Plataforma de gestão imobiliária Web3.
+            © {new Date().getFullYear()} Carteira de Imóveis. Plataforma de gestão imobiliária Web3.
           </p>
         </div>
       </footer>

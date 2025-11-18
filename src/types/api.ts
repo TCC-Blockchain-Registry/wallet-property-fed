@@ -14,20 +14,6 @@ export interface User {
   createdAt: string;
 }
 
-export interface RegisterRequest {
-  name: string;
-  email: string;
-  cpf: string;
-  password: string;
-  walletAddress?: string;
-  role?: 'USER' | 'ADMIN';
-}
-
-export interface RegisterResponse {
-  message: string;
-  userId: number;
-}
-
 export interface PropertyMetadata {
   matriculaId: number;
   folha: number;
@@ -82,42 +68,3 @@ export interface Transfer {
   completedAt?: string;
 }
 
-export interface TransferConfigureRequest {
-  matriculaId: number;
-  toWalletAddress?: string;
-  toCpf?: string;
-}
-
-export interface TransferApproveRequest {
-  matriculaId: string;
-  approverWallet: string;
-}
-
-export interface TransferAcceptRequest {
-  matriculaId: string;
-  buyerWallet: string;
-}
-
-export interface HealthCheck {
-  status: 'healthy' | 'degraded';
-  services: {
-    bff: {
-      status: string;
-      timestamp: string;
-    };
-    orchestrator: {
-      status: string;
-      url?: string;
-    };
-    offchainApi: {
-      status: string;
-      url?: string;
-    };
-  };
-}
-
-export interface ApiError {
-  message: string;
-  statusCode: number;
-  errors?: string[];
-}
