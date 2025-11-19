@@ -12,7 +12,6 @@ interface PropertyCardProps {
   comarca: string;
   endereco: string;
   metragem: number;
-  proprietario: string;
   tipo: PropertyType;
   isRegular: boolean;
   status?: PropertyStatus;
@@ -76,8 +75,6 @@ export const PropertyCard = ({
         icon: AlertCircle
       }
     };
-    
-    // Se o status não for reconhecido, retorna PENDING como fallback
     return statusConfig[status || "PENDING"] || statusConfig.PENDING;
   };
 

@@ -64,23 +64,8 @@ class ApiClient {
     return response.data;
   }
 
-  async getPropertyDetails(matriculaId: string) {
-    const response = await this.client.get(`/properties/${matriculaId}/full`);
-    return response.data;
-  }
-
   async registerProperty(data: PropertyRegistrationRequest) {
     const response = await this.client.post('/properties/register', data);
-    return response.data;
-  }
-
-  async getPropertiesByOwner(walletAddress: string) {
-    const response = await this.client.get(`/properties/owner/${walletAddress}`);
-    return response.data;
-  }
-
-  async getMyTransfers() {
-    const response = await this.client.get('/transfers/my');
     return response.data;
   }
 
@@ -90,27 +75,6 @@ class ApiClient {
     toCpf?: string;
   }) {
     const response = await this.client.post('/transfers/configure', data);
-    return response.data;
-  }
-
-  async approveTransfer(data: {
-    matriculaId: string;
-    approverWallet: string;
-  }) {
-    const response = await this.client.post('/transfers/approve', data);
-    return response.data;
-  }
-
-  async acceptTransfer(data: {
-    matriculaId: string;
-    buyerWallet: string;
-  }) {
-    const response = await this.client.post('/transfers/accept', data);
-    return response.data;
-  }
-
-  async executeTransfer(matriculaId: string) {
-    const response = await this.client.post('/transfers/execute', { matriculaId });
     return response.data;
   }
 

@@ -36,11 +36,6 @@ export interface PropertyBlockchainData {
   isFrozen: boolean;
 }
 
-export interface PropertyFull {
-  dbData: PropertyMetadata;
-  blockchainData: PropertyBlockchainData;
-}
-
 export interface PropertyWithBlockchain extends PropertyMetadata {
   blockchain: PropertyBlockchainData | null;
 }
@@ -55,16 +50,5 @@ export interface PropertyRegistrationRequest {
   matriculaOrigem?: number;
   tipo: 'URBANO' | 'RURAL' | 'LITORAL';
   isRegular?: boolean;
-}
-
-export interface Transfer {
-  id: number;
-  matriculaId: string;
-  sellerWallet: string;
-  buyerWallet: string;
-  approverWallets: string[];
-  status: 'PENDING_APPROVAL' | 'PENDING_BUYER' | 'READY_TO_EXECUTE' | 'COMPLETED' | 'CANCELLED';
-  configuredAt: string;
-  completedAt?: string;
 }
 

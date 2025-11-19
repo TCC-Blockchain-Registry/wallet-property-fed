@@ -146,10 +146,9 @@ const Index = () => {
                 comarca={property.comarca}
                 endereco={property.endereco}
                 metragem={property.metragem}
-                proprietario={property.ownerWalletAddress}
                 tipo={property.propertyType as "URBANO" | "LITORAL" | "RURAL"}
                 isRegular={property.regularStatus === "REGULAR"}
-                status={property.status as any}
+                status={property.status}
                 onTransfer={() => handleTransfer(property.matriculaId)}
               />
             ))}
