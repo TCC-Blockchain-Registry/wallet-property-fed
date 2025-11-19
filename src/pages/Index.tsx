@@ -2,98 +2,37 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { PropertyCard } from "@/components/PropertyCard";
+import { TransferDialog } from "@/components/TransferDialog";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wallet, ArrowRightLeft, Loader2, Plus } from "lucide-react";
+import { LogOut, Wallet, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { ethers } from "ethers";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useMyProperties } from "@/hooks/useProperties";
-import { useConfigureTransfer } from "@/hooks/useTransfers";
-import { formatCPF } from "@/utils/cpfValidator";
 import { formatAddress } from "@/utils/formatters";
 
 const METAMASK_USER_REJECTED = 4001;
-const TOAST_DURATION_MS = 4000;
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, logout, updateWalletAddress } = useAuth();
   const { data: properties = [], isLoading: propertiesLoading, error: propertiesError, refetch: refetchProperties } = useMyProperties();
-  const configureTransferMutation = useConfigureTransfer();
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [selectedMatricula, setSelectedMatricula] = useState<number | null>(null);
-  const [transferType, setTransferType] = useState<"cpf" | "wallet">("wallet");
-  const [cpfValue, setCpfValue] = useState("");
-  const [walletValue, setWalletValue] = useState("");
 
   const handleTransfer = (matriculaId: number) => {
     setSelectedMatricula(matriculaId);
     setIsTransferDialogOpen(true);
   };
 
-  const confirmTransfer = async () => {
-    const transferTo = transferType === "cpf" ? cpfValue : walletValue;
-
-    if (!transferTo.trim()) {
-      toast.error(
-        transferType === "cpf"
-          ? "Por favor, informe o CPF do destinatário"
-          : "Por favor, informe o endereço da wallet"
-      );
-      return;
-    }
-
-    if (!selectedMatricula) {
-      toast.error("Matrícula não selecionada");
-      return;
-    }
-
-    try {
-      setIsTransferDialogOpen(false);
-
-      await configureTransferMutation.mutateAsync({
-        matriculaId: selectedMatricula,
-        toWalletAddress: transferType === "wallet" ? transferTo : undefined,
-        toCpf: transferType === "cpf" ? transferTo.replace(/\D/g, "") : undefined,
-      });
-
-      toast.success(
-        `Transferência da matrícula #${selectedMatricula} iniciada com sucesso!`,
-        { duration: TOAST_DURATION_MS }
-      );
-
-      setCpfValue("");
-      setWalletValue("");
-      setSelectedMatricula(null);
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { message?: string } } };
-      const errorMessage = axiosError?.response?.data?.message || "Erro ao transferir propriedade";
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleDialogClose = () => {
+  const handleTransferClose = () => {
     setIsTransferDialogOpen(false);
-    setCpfValue("");
-    setWalletValue("");
     setSelectedMatricula(null);
-    setTransferType("wallet");
   };
 
-  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCPF(e.target.value);
-    setCpfValue(formatted);
+  const handleTransferSuccess = () => {
+    setIsTransferDialogOpen(false);
+    setSelectedMatricula(null);
   };
 
   useEffect(() => {
@@ -226,103 +165,12 @@ const Index = () => {
         </div>
       </footer>
 
-      <Dialog open={isTransferDialogOpen} onOpenChange={handleDialogClose}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ArrowRightLeft className="h-5 w-5 text-primary" />
-              Transferir Propriedade
-            </DialogTitle>
-            <DialogDescription>
-              Informe os dados do novo proprietário para transferir a matrícula #{selectedMatricula}.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Tabs 
-            value={transferType} 
-            onValueChange={(value) => setTransferType(value as "cpf" | "wallet")}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="wallet">Wallet</TabsTrigger>
-              <TabsTrigger value="cpf">CPF</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="wallet" className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="wallet-address" className="text-sm font-medium">
-                  Endereço da Wallet
-                </Label>
-                <Input
-                  id="wallet-address"
-                  placeholder="0x742d35Cc6634C0532925a3b844Bc..."
-                  value={walletValue}
-                  onChange={(e) => setWalletValue(e.target.value)}
-                  className="w-full font-mono text-sm"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      confirmTransfer();
-                    }
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Digite o endereço da carteira Ethereum do destinatário
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="cpf" className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="cpf-number" className="text-sm font-medium">
-                  CPF do Destinatário
-                </Label>
-                <Input
-                  id="cpf-number"
-                  placeholder="000.000.000-00"
-                  value={cpfValue}
-                  onChange={handleCpfChange}
-                  className="w-full"
-                  maxLength={14}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      confirmTransfer();
-                    }
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">
-                  O CPF será formatado automaticamente enquanto você digita
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <DialogFooter className="gap-2 sm:gap-0 mt-4">
-            <Button
-              variant="outline"
-              onClick={handleDialogClose}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={confirmTransfer}
-              disabled={configureTransferMutation.isPending}
-              className="bg-primary hover:bg-primary/90"
-            >
-              {configureTransferMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <ArrowRightLeft className="w-4 h-4 mr-2" />
-                  Confirmar Transferência
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <TransferDialog
+        isOpen={isTransferDialogOpen}
+        matriculaId={selectedMatricula}
+        onClose={handleTransferClose}
+        onSuccess={handleTransferSuccess}
+      />
     </div>
   );
 };
