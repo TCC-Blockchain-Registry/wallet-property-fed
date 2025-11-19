@@ -1,22 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { PropertyCard } from "@/components/PropertyCard";
 import { TransferDialog } from "@/components/TransferDialog";
 import { Button } from "@/components/ui/button";
-import { LogOut, Wallet, Loader2, Plus } from "lucide-react";
-import { toast } from "sonner";
-import { ethers } from "ethers";
+import { LogOut, Wallet, Loader2, Plus, AlertTriangle } from "lucide-react";
 import { useMyProperties } from "@/hooks/useProperties";
 import { formatAddress } from "@/utils/formatters";
 
-const METAMASK_USER_REJECTED = 4001;
-
 const Index = () => {
   const navigate = useNavigate();
-  const { user, logout, updateWalletAddress } = useAuth();
+  const { user, logout } = useAuth();
   const { data: properties = [], isLoading: propertiesLoading, error: propertiesError, refetch: refetchProperties } = useMyProperties();
-  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [selectedMatricula, setSelectedMatricula] = useState<number | null>(null);
 
@@ -34,37 +29,6 @@ const Index = () => {
     setIsTransferDialogOpen(false);
     setSelectedMatricula(null);
   };
-
-  useEffect(() => {
-    const connectWalletAutomatically = async () => {
-      if (!user?.walletAddress && !isConnectingWallet) {
-        setIsConnectingWallet(true);
-        try {
-          if (typeof (window as any).ethereum !== "undefined") {
-            const provider = new ethers.BrowserProvider((window as any).ethereum);
-            const accounts = await provider.send("eth_requestAccounts", []);
-
-            if (accounts.length > 0) {
-              updateWalletAddress(accounts[0]);
-              toast.success("MetaMask conectado automaticamente!");
-            }
-          } else {
-            toast.error("MetaMask não encontrado. Por favor, instale a extensão.");
-          }
-        } catch (error: unknown) {
-          if (error instanceof Error && 'code' in error && error.code === METAMASK_USER_REJECTED) {
-            toast.error("Conexão com MetaMask cancelada");
-          } else {
-            toast.error("Erro ao conectar com MetaMask");
-          }
-        } finally {
-          setIsConnectingWallet(false);
-        }
-      }
-    };
-
-    connectWalletAutomatically();
-  }, [user?.walletAddress, updateWalletAddress, isConnectingWallet]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,6 +53,7 @@ const Index = () => {
               variant="default"
               size="sm"
               onClick={() => navigate("/register-property")}
+              disabled={!user?.walletAddress}
             >
               <Plus className="h-4 w-4 mr-2" />
               Cadastrar Imóvel
@@ -102,6 +67,20 @@ const Index = () => {
       </header>
 
       <main className="container px-4 md:px-8 py-12">
+        {!user?.walletAddress && (
+          <div className="mb-8 p-4 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                Carteira não conectada
+              </p>
+              <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                Faça login novamente para conectar sua carteira MetaMask e gerenciar imóveis.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="mb-12 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
             Meus Imóveis

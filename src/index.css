@@ -26,7 +26,7 @@ All colors MUST be HSL.
     --muted: 210 40% 95%;
     --muted-foreground: 215 15% 45%;
 
-    --accent: 43 85% 55%;
+    --accent: 215 30% 92%;
     --accent-foreground: 215 60% 25%;
 
     --destructive: 0 84.2% 60.2%;
@@ -39,7 +39,7 @@ All colors MUST be HSL.
     --radius: 0.75rem;
     
     --gradient-primary: linear-gradient(135deg, hsl(215, 60%, 25%) 0%, hsl(215, 50%, 35%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(43, 85%, 55%) 0%, hsl(43, 75%, 65%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(215, 30%, 88%) 0%, hsl(215, 30%, 95%) 100%);
     --shadow-soft: 0 2px 8px -2px hsl(215 25% 15% / 0.08);
     --shadow-medium: 0 4px 16px -4px hsl(215 25% 15% / 0.12);
     --shadow-large: 0 12px 32px -8px hsl(215 25% 15% / 0.2);
@@ -80,8 +80,8 @@ All colors MUST be HSL.
     --muted: 215 25% 18%;
     --muted-foreground: 215 15% 65%;
 
-    --accent: 43 85% 55%;
-    --accent-foreground: 215 30% 8%;
+    --accent: 215 25% 22%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 210 40% 98%;
@@ -91,7 +91,7 @@ All colors MUST be HSL.
     --ring: 210 40% 98%;
     
     --gradient-primary: linear-gradient(135deg, hsl(215, 30%, 15%) 0%, hsl(215, 28%, 22%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(43, 85%, 55%) 0%, hsl(43, 75%, 65%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(215, 25%, 18%) 0%, hsl(215, 25%, 25%) 100%);
     --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
     --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.4);
     --shadow-large: 0 12px 32px -8px hsl(0 0% 0% / 0.6);

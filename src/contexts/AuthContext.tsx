@@ -95,11 +95,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const updatedUser = { ...user, walletAddress: address };
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
-    } catch (error) {
-      // Graceful degradation: update locally even if backend sync fails
-      const updatedUser = { ...user, walletAddress: address };
-      setUser(updatedUser);
-      localStorage.setItem("user", JSON.stringify(updatedUser));
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, "Falha ao atualizar carteira"));
     }
   };
 

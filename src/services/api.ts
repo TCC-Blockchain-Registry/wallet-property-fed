@@ -28,7 +28,7 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && localStorage.getItem('authToken')) {
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
           window.location.href = '/login';
